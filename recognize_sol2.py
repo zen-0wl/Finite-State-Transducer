@@ -1,19 +1,23 @@
 import tkinter as tk
-import pyfst
+from matplotlib.pyplot import draw_all
+from nltk.nltk_contrib.fst.fst import FST
 
-class ChineseEnglishTransliterator(pyfst.Fst):
-    def __init__(self):
-        super().__init__()
+class ChineseEnglishTransliterator(FST):
+    def __init__(self, label):
+        super().__init__(label=label)
 
         # Define states
-        for i in range(40):
+        for _ in range(40):
             self.add_state()
 
-        self.set_start(0)
+        # Set final states
         for i in range(6, 40, 3):
             self.set_final(i)
 
-        # Define arcs based on the provided table
+        # Set initial state
+        self.set_start(0) 
+
+        # Defined arcs based on the provided table
         self.add_arc(0, 1, 'b', 'b')
         self.add_arc(1, 1, 'ē', 'e')
         self.add_arc(1, 1, 'n', 'n')
@@ -22,7 +26,7 @@ class ChineseEnglishTransliterator(pyfst.Fst):
         self.add_arc(2, 2, 'ài', 'a')
         self.add_arc(2, 2, '#', '#')
 
-        # Add arcs for other words based on the table...
+        # Added arcs 
         self.add_arc(0, 3, 'l', 'l')
         self.add_arc(3, 3, 'ě', 'e')
         self.add_arc(3, 3, 'i', 'i')
@@ -37,7 +41,7 @@ class ChineseEnglishTransliterator(pyfst.Fst):
         self.add_arc(5, 5, 'l', 'l')
         self.add_arc(5, 5, 'i', 'i')
 
-        # Add arcs for other words based on the table...
+        # Added arcs 
         self.add_arc(0, 6, 'ā', 'c')
         self.add_arc(6, 6, 'm', 'm')
         self.add_arc(6, 6, 'ó', 'o')
@@ -45,7 +49,7 @@ class ChineseEnglishTransliterator(pyfst.Fst):
         self.add_arc(6, 7, 'yà', 'y')
         self.add_arc(7, 7, '#', '#')
 
-        # Add arcs for other words based on the table...
+        # Added arcs 
         self.add_arc(0, 8, 'ā', 'a')
         self.add_arc(8, 8, 's', 's')
         self.add_arc(8, 8, 'ī', 'i')
@@ -62,7 +66,7 @@ class ChineseEnglishTransliterator(pyfst.Fst):
         self.add_arc(11, 11, 's', 's')
         self.add_arc(11, 11, 'ī', 'i')
 
-        # Add arcs for other words based on the table...
+        # Added arcs 
         self.add_arc(0, 12, 'b', 'b')
         self.add_arc(12, 12, 'ā', 'a')
         self.add_arc(12, 12, 'n', 'n')
@@ -72,7 +76,7 @@ class ChineseEnglishTransliterator(pyfst.Fst):
         self.add_arc(13, 13, 'uǒ', 'uo')
         self.add_arc(13, 13, 'g', 'g')
 
-        # Add arcs for other words based on the table...
+    
 
     def arcs(self, state):
         return [(arc.nextstate, arc.ilabel, arc.olabel) for arc in self.arcs(state)]
@@ -87,6 +91,22 @@ class ChineseEnglishTransliterator(pyfst.Fst):
     def get_states(self):
         return list(range(self.num_states()))
 
+# Create an instance of the ChineseEnglishTransliterator
+transliterator = ChineseEnglishTransliterator(label='chinese_english_transliterator')
+
+# Define the input and output for recognition
+inp = "ab##bb"
+outp = "10111#"
+print(inp)
+
+# Use the recognize function defined in ChineseEnglishTransliterator
+if transliterator.recognize(inp, outp):
+    print(outp)
+    print("accept")
+else:
+    print("reject")
+
+# Displays the FST using Tkinter
 class FSTDisplay:
     def __init__(self, fst):
         self.fst = fst
@@ -94,28 +114,26 @@ class FSTDisplay:
         self.canvas = tk.Canvas(self.window, width=500, height=500)
         self.canvas.pack()
 
-    def draw_state(self, state):
-        x, y = state * 20, 100
-        self.canvas.create_oval(x, y, x + 10, y + 10, fill="white", outline="black")
-        self.canvas.create_text(x + 5, y + 5, text=str(state), font=('Helvetica', 8, 'bold'))
+        self.draw_states()
+        self.draw_arcs()
 
-    def draw_arc(self, from_state, to_state, label):
-        x1, y1 = from_state * 20 + 10, 120
-        x2, y2 = to_state * 20, 140
-        self.canvas.create_line(x1, y1, x2, y2, arrow=tk.LAST)
-        self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=label, font=('Helvetica', 8))
+    def draw_states(self):
+        for state in self.fst.get_states():
+            x, y = state * 20, 100
+            self.canvas.create_oval(x, y, x + 10, y + 10, fill="white", outline="black")
+            self.canvas.create_text(x + 5, y + 5, text=str(state), font=('Helvetica', 8, 'bold'))
+
+    def draw_arcs(self):
+        for state in self.fst.get_states():
+            for next_state, ilabel, olabel in self.fst.arcs(state):
+                x1, y1 = state * 20 + 10, 120
+                x2, y2 = next_state * 20, 140
+                self.canvas.create_line(x1, y1, x2, y2, arrow=tk.LAST)
+                self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=f"{ilabel}:{olabel}", font=('Helvetica', 8))
 
     def display(self):
         self.window.title("FST Display")
-        states = self.fst.get_states()
-        for state in states:
-            self.draw_state(state)
-            for next_state, ilabel, olabel in self.fst.arcs(state):
-                self.draw_arc(state, next_state, f"{ilabel}:{olabel}")
         self.window.mainloop()
-
-# Create an instance of the ChineseEnglishTransliterator
-transliterator = ChineseEnglishTransliterator()
 
 # Display the FST using Tkinter
 display = FSTDisplay(transliterator)
