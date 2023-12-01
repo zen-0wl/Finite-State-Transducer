@@ -1,4 +1,4 @@
-# Use the official Python runtime as a parent image
+# Official Python runtime as a parent image
 FROM python:3.11
 
 # Enable non-interactive mode during image build
@@ -12,14 +12,18 @@ RUN apt-get update && \
     libtool \
     g++ \
     git \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone OpenFst from GitHub and build it
+# Clone OpenFst from GitHub
 WORKDIR /usr/src
-RUN git clone --branch master --single-branch https://zen-0wl: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@github.com/unicode-org/OpenFst.git
+RUN git clone --branch master --single-branch https://github.com/georgepar/openfst-docker.git
 
-WORKDIR /usr/src/OpenFst
-RUN autoreconf --force --install && ./configure --enable-static --enable-shared && make && make install
+# Set the working directory to /usr/src/openfst-docker
+WORKDIR /usr/src/openfst-docker
+
+# Install OpenFst dependencies and build OpenFst
+RUN ./install_openfst.sh
 
 # Install pyfst
 RUN pip install pyfst
