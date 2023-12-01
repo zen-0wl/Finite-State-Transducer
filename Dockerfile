@@ -1,4 +1,4 @@
-# Official Python runtime as a parent image
+# Official Python image as the base image
 FROM python:3.11
 
 # Enable non-interactive mode during image build
@@ -8,22 +8,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     automake \
-    autoconf \
+    autoconf \ 
     libtool \
     g++ \
     git \
-    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone OpenFst from GitHub
-WORKDIR /usr/src
-RUN git clone --branch master --single-branch https://github.com/georgepar/openfst-docker.git
+# Copy OpenFst source code into the container
+COPY ./openfst-1.8.2.post1 /usr/src/OpenFst
 
-# Set the working directory to /usr/src/openfst-docker
-WORKDIR /usr/src/openfst-docker
-
-# Install OpenFst dependencies and build OpenFst
-RUN ./install_openfst.sh
+# Build and install OpenFst
+WORKDIR /usr/src/OpenFst
+RUN autoreconf --force --install && \
+    ./configure --enable-static --enable-shared && \
+    make && \
+    make install
 
 # Install pyfst
 RUN pip install pyfst
@@ -34,5 +33,5 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Run transliteration script
+# Run your Python script
 CMD ["python", "recognize_sol2.py"]
