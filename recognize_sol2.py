@@ -1,8 +1,15 @@
 import tkinter as tk
-from matplotlib.pyplot import draw_all
-from nltk.nltk_contrib.fst.fst import FST
+from nltk.nltk_contrib.fst.fst import *
 
-class ChineseEnglishTransliterator(FST):
+class MyFST(FST):
+    def add_initial_state(self, state):
+        self.set_start(state)
+
+    def add_final_state(self, state):
+        self.set_final(state)
+        
+        
+class ChineseEnglishTransliterator(MyFST):
     def __init__(self, label):
         super().__init__(label=label)
 
@@ -11,11 +18,9 @@ class ChineseEnglishTransliterator(FST):
             self.add_state()
 
         # Set final states
-        for i in range(6, 40, 3):
-            self.set_final(i)
-
-        # Set initial state
-        self.set_start(0) 
+        final_states = [6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39]
+        for state in final_states:
+            self.set_final(state)
 
         # Defined arcs based on the provided table
         self.add_arc(0, 1, 'b', 'b')
@@ -75,8 +80,7 @@ class ChineseEnglishTransliterator(FST):
         self.add_arc(13, 13, 'g', 'g')
         self.add_arc(13, 13, 'uǒ', 'uo')
         self.add_arc(13, 13, 'g', 'g')
-
-    
+        
 
     def arcs(self, state):
         return [(arc.nextstate, arc.ilabel, arc.olabel) for arc in self.arcs(state)]
@@ -92,7 +96,7 @@ class ChineseEnglishTransliterator(FST):
         return list(range(self.num_states()))
 
 # Create an instance of the ChineseEnglishTransliterator
-transliterator = ChineseEnglishTransliterator(label='chinese_english_transliterator')
+transliterator = ChineseEnglishTransliterator(label='chinglish_transliterator')
 
 # Define the input and output for recognition
 inp = "ab##bb"
