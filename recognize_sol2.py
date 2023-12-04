@@ -1,144 +1,132 @@
-import tkinter as tk
-from nltk.nltk_contrib.fst.fst import *
+from nltk.nltk_contrib.fst.fst import *  
+from tkinter import *
+import matplotlib.pyplot as plt
+from PIL import Image, ImageTk
+import networkx as nx
+import pydotplus 
+import pydot
+from IPython.display import Image as IPImage, display
+import codecs
 
-class MyFST(FST):
-    def add_initial_state(self, state):
-        self.set_start(state)
+class ChinglishFST(FST):
+    def recognize(self, input_str):
+        output_str = self.transduce(list(input_str))
+        return " ".join(output_str)
 
-    def add_final_state(self, state):
-        self.set_final(state)
+# Define the states and transitions
+f = ChinglishFST('chinglish_transliteration')
+state_labels = {}
+
+# Function to add state and return the label
+def add_state(label):
+    state_labels[label] = True
+    f.add_state(label)
+    return label
+
+# Added arcs | Mapping of Pinyin to English Loan Word
+f.add_arc(add_state('1'), add_state('2'), ('beng', 'dai'), ('band', 'age'))
+f.add_arc(add_state('3'), add_state('4'), ('amo', 'niya'), ('ammo', 'nia'))
+f.add_arc(add_state('5'), add_state('6'), ('asi', 'pi', 'lin'), ('as', 'pi', 'rin'))
+f.add_arc(add_state('7'), add_state('8'), ('shi', 'duo', 'pi', 'li'), ('straw', 'ber', 'ry'))
+f.add_arc(add_state('9'), add_state('10'), ('bei', 'guo'), ('ba', 'gel'))
+f.add_arc(add_state('11'), add_state('12'), ('sang', 'na'), ('hea', 'lth'))
+f.add_arc(add_state('13'), add_state('14'), ('banz', 'huo', 'qin'), ('ban', 'jo'))
+f.add_arc(add_state('15'), add_state('16'), ('ma', 'ke', 'bei'), ('mu', 'g'))
+f.add_arc(add_state('17'), add_state('18'), ('ba', 'lei'), ('bal', 'let'))
+f.add_arc(add_state('19'), add_state('20'), ('mai', 'ke', 'feng'), ('mi', 'cro', 'phone'))
+f.add_arc(add_state('21'), add_state('22'), ('bu', 'lu', 'si'), ('b', 'lu', 'es'))
+f.add_arc(add_state('23'), add_state('24'), ('ma', 'sha', 'ji'), ('mas', 'sage'))
+f.add_arc(add_state('25'), add_state('26'), ('ba', 'shi'), ('b', 'us'))
+f.add_arc(add_state('27'), add_state('28'), ('ning', 'meng'), ('le', 'mon'))
+f.add_arc(add_state('29'), add_state('30'), ('ka', 'fei', 'yin'), ('caf', 'fei', 'ne'))
+f.add_arc(add_state('31'), add_state('32'), ('jia', 'ke'), ('jac', 'ket'))
+f.add_arc(add_state('33'), add_state('34'), ('ka', 'lu', 'li'), ('ca', 'lo', 'rie'))
+f.add_arc(add_state('35'), add_state('36'), ('su', 'ke', 'da'), ('scoo', 'ter'))
+f.add_arc(add_state('37'), add_state('38'), ('ka', 'tong'), ('car', 'toon'))
+f.add_arc(add_state('39'), add_state('40'), ('xiang', 'bo'), ('sham', 'poo'))
+f.add_arc(add_state('41'), add_state('42'), ('zhi', 'shi'), ('che', 'ese'))
+f.add_arc(add_state('43'), add_state('44'), ('shi', 'duo', 'pi', 'li'), ('straw', 'ber', 'ry'))
+f.add_arc(add_state('45'), add_state('46'), ('qiao', 'ke', 'li'), ('cho', 'co', 'late'))
+f.add_arc(add_state('47'), add_state('48'), ('ji', 'ta'), ('gui', 'tar'))
+f.add_arc(add_state('49'), add_state('50'), ('ka', 'fei'), ('cof', 'fee'))
+f.add_arc(add_state('51'), add_state('52'), ('ha', 'ni'), ('ho', 'ney'))
+f.add_arc(add_state('53'), add_state('54'), ('qu', 'qi'), ('coo', 'kie'))
+f.add_arc(add_state('55'), add_state('56'), ('lei', 'she'), ('la', 'ser'))
+f.add_arc(add_state('57'), add_state('58'), ('sha', 'fa'), ('so', 'fa'))
+f.add_arc(add_state('59'), add_state('60'), ('ni', 'long'), ('ny', 'lon'))
+f.add_arc(add_state('61'), add_state('62'), ('ga', 'li'), ('cur', 'ry'))
+f.add_arc(add_state('63'), add_state('64'), ('di', 'shi'), ('ta', 'xi'))
+f.add_arc(add_state('65'), add_state('66'), ('wei', 'ta', 'ming'), ('vi', 'ta', 'min'))
+f.add_arc(add_state('67'), add_state('68'), ('yu', 'jia'), ('yo', 'ga'))
+
+# Set the initial state and final state
+f.initial_state = '1'
+f.set_final('68')
+
+# Tkinter window for FST construction
+window = Tk()
+window.title("FST Construction")
+
+# Text widget to display FST information
+fst_info_text = Text(window, height=100, width=100)
+fst_info_text.pack()
+
+# Display the FST information in the Tkinter window
+fst_info_text.insert(END, f.__str__())
+
+# Draw the FST using networkx, pydot, and matplotlib
+G = nx.DiGraph()
+
+# Add nodes and edges to the graph
+for arc_label in f.arcs():
+    src_state = f.src(arc_label)
+    dst_state = f.dst(arc_label)
+    in_string = f.in_string(arc_label)
+    out_string = f.out_string(arc_label)
+
+    if src_state == f.initial_state:
+        G.add_node(src_state, shape='circle', color='green', style='filled')
+    elif f.is_final(src_state):
+        G.add_node(src_state, shape='doublecircle', color='red', style='filled')
+    else:
+        G.add_node(src_state, shape='circle')
+
+    label = f"{in_string}/{out_string}"
+    G.add_edge(src_state, dst_state, label=label)
+
+# Create a pydot graph from the networkx graph
+pydot_graph = nx.drawing.nx_pydot.to_pydot(G)
+
+# Save the graph to a file
+graph_file_path = "fst_graph.png"
+pydot_graph.write_png(graph_file_path)
+
+# Display the saved image using PIL and IPython
+img = Image.open(graph_file_path)
+display(IPImage(graph_file_path))
+
+# Run the Tkinter main loop
+window.mainloop()
+
+# Test the FST with given inputs and save the mappings in the .dat file
+test_inputs = ["bēngdài", "āmóníyà", "āsīpílín", "shìduōpílí", "bèiguǒ", 
+               "sāngná", "bānzhuóqín", "mǎkèbēi", "bālěi", "màikèfēng", 
+               "bùlǔsī", "mǎshājī", "bāshì", "níngméng", "kāfēiyīn", 
+               "jiākè", "kǎlùlǐ", "sùkèdá", "kǎtōng", "xiāngbō", "zhīshì", 
+               "shìduōpílí", "qiǎokèlì", "jítā", "kāfēi", "hāní", "qǔqí", 
+               "léishè", "shāfā", "nílóng", "gālí", "dīshì", "wéitāmìng", "yújiā"]
+
+output_file_path = "Chinglish-trans.dat"
+
+# Open the file in write mode
+with open(output_file_path, 'w') as output_file:
+    # Iterate through test inputs
+    for input_str in test_inputs:
+        # Use the recognize function to get the output
+        output_str = f.recognize(input_str)
         
-        
-class ChineseEnglishTransliterator(MyFST):
-    def __init__(self, label):
-        super().__init__(label=label)
+        # Print the mapping to the console
+        print(f"{input_str} --> {output_str}")
 
-        # Define states
-        for _ in range(40):
-            self.add_state()
-
-        # Set final states
-        final_states = [6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39]
-        for state in final_states:
-            self.set_final(state)
-
-        # Defined arcs based on the provided table
-        self.add_arc(0, 1, 'b', 'b')
-        self.add_arc(1, 1, 'ē', 'e')
-        self.add_arc(1, 1, 'n', 'n')
-        self.add_arc(1, 2, 'g', 'g')
-        self.add_arc(2, 2, 'd', 'd')
-        self.add_arc(2, 2, 'ài', 'a')
-        self.add_arc(2, 2, '#', '#')
-
-        # Added arcs 
-        self.add_arc(0, 3, 'l', 'l')
-        self.add_arc(3, 3, 'ě', 'e')
-        self.add_arc(3, 3, 'i', 'i')
-        self.add_arc(3, 4, 'g', 'g')
-        self.add_arc(4, 4, 'q', 'q')
-        self.add_arc(4, 4, 'í', 'i')
-        self.add_arc(4, 4, '#', '#')
-
-        self.add_arc(0, 5, 'g', 'g')
-        self.add_arc(5, 5, 'a', 'a')
-        self.add_arc(5, 5, '#', '#')
-        self.add_arc(5, 5, 'l', 'l')
-        self.add_arc(5, 5, 'i', 'i')
-
-        # Added arcs 
-        self.add_arc(0, 6, 'ā', 'c')
-        self.add_arc(6, 6, 'm', 'm')
-        self.add_arc(6, 6, 'ó', 'o')
-        self.add_arc(6, 6, 'ní', 'n')
-        self.add_arc(6, 7, 'yà', 'y')
-        self.add_arc(7, 7, '#', '#')
-
-        # Added arcs 
-        self.add_arc(0, 8, 'ā', 'a')
-        self.add_arc(8, 8, 's', 's')
-        self.add_arc(8, 8, 'ī', 'i')
-        self.add_arc(8, 8, 'p', 'p')
-        self.add_arc(8, 8, 'l', 'l')
-        self.add_arc(8, 8, 'ín', 'in')
-        self.add_arc(8, 9, '#', '#')
-
-        self.add_arc(0, 10, 'b', 'b')
-        self.add_arc(10, 10, 'èi', 'ei')
-        self.add_arc(10, 10, 'g', 'g')
-        self.add_arc(10, 10, 'uǒ', 'uo')
-        self.add_arc(10, 11, '#', '#')
-        self.add_arc(11, 11, 's', 's')
-        self.add_arc(11, 11, 'ī', 'i')
-
-        # Added arcs 
-        self.add_arc(0, 12, 'b', 'b')
-        self.add_arc(12, 12, 'ā', 'a')
-        self.add_arc(12, 12, 'n', 'n')
-        self.add_arc(12, 12, 'zuó', 'zuo')
-        self.add_arc(12, 13, '#', '#')
-        self.add_arc(13, 13, 'g', 'g')
-        self.add_arc(13, 13, 'uǒ', 'uo')
-        self.add_arc(13, 13, 'g', 'g')
-        
-
-    def arcs(self, state):
-        return [(arc.nextstate, arc.ilabel, arc.olabel) for arc in self.arcs(state)]
-
-    def recognize(self, input_syllable):
-        output_transliteration = self.shortest_path(input_syllable)
-        if output_transliteration:
-            return ' '.join(output_transliteration)
-        else:
-            return None
-
-    def get_states(self):
-        return list(range(self.num_states()))
-
-# Create an instance of the ChineseEnglishTransliterator
-transliterator = ChineseEnglishTransliterator(label='chinglish_transliterator')
-
-# Define the input and output for recognition
-inp = "ab##bb"
-outp = "10111#"
-print(inp)
-
-# Use the recognize function defined in ChineseEnglishTransliterator
-if transliterator.recognize(inp, outp):
-    print(outp)
-    print("accept")
-else:
-    print("reject")
-
-# Displays the FST using Tkinter
-class FSTDisplay:
-    def __init__(self, fst):
-        self.fst = fst
-        self.window = tk.Tk()
-        self.canvas = tk.Canvas(self.window, width=500, height=500)
-        self.canvas.pack()
-
-        self.draw_states()
-        self.draw_arcs()
-
-    def draw_states(self):
-        for state in self.fst.get_states():
-            x, y = state * 20, 100
-            self.canvas.create_oval(x, y, x + 10, y + 10, fill="white", outline="black")
-            self.canvas.create_text(x + 5, y + 5, text=str(state), font=('Helvetica', 8, 'bold'))
-
-    def draw_arcs(self):
-        for state in self.fst.get_states():
-            for next_state, ilabel, olabel in self.fst.arcs(state):
-                x1, y1 = state * 20 + 10, 120
-                x2, y2 = next_state * 20, 140
-                self.canvas.create_line(x1, y1, x2, y2, arrow=tk.LAST)
-                self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=f"{ilabel}:{olabel}", font=('Helvetica', 8))
-
-    def display(self):
-        self.window.title("FST Display")
-        self.window.mainloop()
-
-# Display the FST using Tkinter
-display = FSTDisplay(transliterator)
-display.display()
+        # Write the mapping to the output file
+        output_file.write(f"{input_str} --> {output_str}\n")
