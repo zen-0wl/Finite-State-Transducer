@@ -11,7 +11,7 @@ import codecs
 class ChinglishFST(FST):
     def recognize(self, input_str):
         output_str = self.transduce(list(input_str))
-        return " ".join(output_str)
+        return output_str
 
 # Define the states and transitions
 f = ChinglishFST('chinglish_transliteration')
@@ -74,32 +74,26 @@ fst_info_text.pack()
 # Display the FST information in the Tkinter window
 fst_info_text.insert(END, f.__str__())
 
-# Draw the FST using networkx, pydot, and matplotlib
+# Draw the FST using networkx and matplotlib
 G = nx.DiGraph()
 
-# Add nodes and edges to the graph
-for arc_label in f.arcs():
-    src_state = f.src(arc_label)
-    dst_state = f.dst(arc_label)
-    in_string = f.in_string(arc_label)
-    out_string = f.out_string(arc_label)
-
-    if src_state == f.initial_state:
-        G.add_node(src_state, shape='circle', color='green', style='filled')
-    elif f.is_final(src_state):
-        G.add_node(src_state, shape='doublecircle', color='red', style='filled')
-    else:
-        G.add_node(src_state, shape='circle')
-
-    label = f"{in_string}/{out_string}"
-    G.add_edge(src_state, dst_state, label=label)
-
-# Create a pydot graph from the networkx graph
-pydot_graph = nx.drawing.nx_pydot.to_pydot(G)
+for state in f.states():
+    for arc_label in f._outgoing[state]:
+        source = state
+        target = f._dst[arc_label]
+        input_str = f._in_string[arc_label]
+        output_str = f._out_string[arc_label]
+        G.add_edge(source, target, label=f"{input_str} / {output_str}")
+    
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels=True, font_weight='bold', node_color='lightblue', node_size=1500, font_size=8, arrowsize=20)
+edge_labels = nx.get_edge_attributes(G, 'label')
+nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
 
 # Save the graph to a file
 graph_file_path = "fst_graph.png"
-pydot_graph.write_png(graph_file_path)
+plt.savefig(graph_file_path)
+plt.show()
 
 # Display the saved image using PIL and IPython
 img = Image.open(graph_file_path)
@@ -109,12 +103,7 @@ display(IPImage(graph_file_path))
 window.mainloop()
 
 # Test the FST with given inputs and save the mappings in the .dat file
-test_inputs = ["bēngdài", "āmóníyà", "āsīpílín", "shìduōpílí", "bèiguǒ", 
-               "sāngná", "bānzhuóqín", "mǎkèbēi", "bālěi", "màikèfēng", 
-               "bùlǔsī", "mǎshājī", "bāshì", "níngméng", "kāfēiyīn", 
-               "jiākè", "kǎlùlǐ", "sùkèdá", "kǎtōng", "xiāngbō", "zhīshì", 
-               "shìduōpílí", "qiǎokèlì", "jítā", "kāfēi", "hāní", "qǔqí", 
-               "léishè", "shāfā", "nílóng", "gālí", "dīshì", "wéitāmìng", "yújiā"]
+test_inputs = ["ga li", "ka lu li", "wei ta ming", "ka fei", "lei she"]
 
 output_file_path = "Chinglish-trans.dat"
 
@@ -124,9 +113,10 @@ with open(output_file_path, 'w') as output_file:
     for input_str in test_inputs:
         # Use the recognize function to get the output
         output_str = f.recognize(input_str)
-        
-        # Print the mapping to the console
-        print(f"{input_str} --> {output_str}")
 
-        # Write the mapping to the output file
+        # Write the Pinyin and English outputs to the .dat file
         output_file.write(f"{input_str} --> {output_str}\n")
+
+        # Display the test input and its recognition result in the nltk window
+        result = "Accept" if f.recognize(input_str) else "Reject"
+        print(f"Test Input: {input_str} \t Result: {result}")
