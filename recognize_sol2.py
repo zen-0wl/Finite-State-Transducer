@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
 import networkx as nx
 from IPython.display import Image as IPImage, display
+import graphviz
 
 class ChinglishFST(FST):
     def __init__(self):
@@ -15,10 +16,17 @@ class ChinglishFST(FST):
         self.window = Tk()
         self.window.title("Chinglish FST Construction")
         
-        self.canvas = Canvas(self.window, width=800, height=400)
+        self.canvas = Canvas(self.window, width=1000, height=600)
         self.canvas.pack()
         
         self.graph = nx.DiGraph()
+        
+        # Unique state label  
+        self.state_counter = 0
+        
+        # Root state
+        self.root_state = "li"
+        self.graph.add_node(self.root_state, label=f"Root")
 
     def add_syllables(self, syllables, translation):
         self.mapping[len(syllables.split())][syllables] = translation
@@ -69,20 +77,41 @@ class ChinglishFST(FST):
         return result
 
     def _update_fst_construction(self, input_text, output_text):
-        self.graph.add_node(input_text)
-        self.graph.add_node(output_text)
-        self.graph.add_edge(input_text, output_text)
+        # Connected root state
+        if input_text != "li" and not self.graph.has_edge("li", input_text):
+            self.graph.add_edge("li", input_text, label=input_text)
+            
+        if input_text not in self.graph.nodes():
+            self.graph.add_node(input_text, label=f"q{self.state_counter}")
+            self.state_counter += 1
 
-        pos = nx.spring_layout(self.graph)
-        
-        labels = {node: node for node in self.graph.nodes()}
-        
-        nx.draw_networkx_nodes(self.graph, pos, node_size=700, node_color='skyblue')
-        nx.draw_networkx_edges(self.graph, pos, width=1.0, alpha=0.5, edge_color='gray')
-        nx.draw_networkx_labels(self.graph, pos, labels, font_size=10)
+        if output_text not in self.graph.nodes():
+            self.graph.add_node(output_text, label=f"q{self.state_counter}")
+            self.state_counter += 1
 
+        if not self.graph.has_edge(input_text, output_text):
+            self.graph.add_edge(input_text, output_text, label=output_text)
+
+        self._draw_fst_automaton()
+        
+    def _draw_fst_automaton(self):
+        # directed graph using graphviz for visualization
+        dot = graphviz.Digraph(comment='Chinglish FST')
+
+        for node, data in self.graph.nodes(data=True):
+            label = data.get('label', '')  # empty string if 'label' isnt present
+            dot.node(label, label=node)
+
+        for edge in self.graph.edges(data=True):
+            dot.edge(str(edge[0]), str(edge[1]), label=edge[2]['label'])
+
+        # graph saved as png
+        dot.render('fst_graph', format='png', cleanup=True)
+
+        # graph display in tkinter window 
         img = ImageTk.PhotoImage(Image.open("fst_graph.png"))
         self.canvas.create_image(20, 20, anchor=NW, image=img)
+        self.canvas.update()
 
     def close_output_file(self):
         self.output_file.close()
@@ -130,7 +159,7 @@ translator.add_syllables('ni long', 'ny lon')
 translator.add_syllables('di shi', 'ta xi') 
 translator.add_syllables('yu jia', 'yo ga') 
 
-# Test Inputs (Figure 1)
+# Prints Input-Output Mappings (Figure 1)
 print(translator.translate("ga"))          # cur
 print(translator.translate("li"))          # ry
 print(translator.translate("ka lu li"))    # ca lo rie
@@ -138,7 +167,7 @@ print(translator.translate("wei ta ming")) # vi ta min
 print(translator.translate("ka fei"))      # cof fee 
 print(translator.translate("lei she"))     # la ser
 
-# Test Inputs (Rest of all mappings)
+# Prints Input-Output of other mappings (Table 1)
 print(translator.translate("beng dai"))    # band age
 print(translator.translate("a mo ni ya"))  # am mo ni a
 print(translator.translate("a si pi lin")) # a s pi rin
