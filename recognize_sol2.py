@@ -1,162 +1,177 @@
-## produces graph + mapping content but in nltk window (not in .dat) 
-from nltk.nltk_contrib.fst.fst import *  
+from nltk.nltk_contrib.fst.fst import *
+from nltk.draw.util import *
 from tkinter import *
 import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
 import networkx as nx
-import pydotplus 
-import pydot
 from IPython.display import Image as IPImage, display
-import codecs
 
 class ChinglishFST(FST):
-    def recognize(self, input_str):
-        # Use the transduce function to get the output for the entire input
-        output = self.transduce(list(input_str.split()))
+    def __init__(self):
+        self.mapping = {i: {} for i in range(1, 5)}
+        self.output_file = open("Chinglish-trans.dat", "w")
 
-        return output
-    
-    def transduce(self, input_str):
-        """
-        Transduce the input Pinyin string to English.
-        """
-        current_state = self.initial_state
-        output_str = []
-
-        for symbol in input_str:
-            # Find the outgoing arc for the current state and input symbol
-            outgoing_arcs = self._outgoing.get(current_state, [])
-            possible_arcs = []
-
-        for arc in outgoing_arcs:
-            # Check if the input symbol matches the Pinyin symbol in the arc
-            if symbol == self._in_string[arc][0]:
-                possible_arcs.append(arc)
-
-        if not possible_arcs:
-            # If no matching arc is found, print debug information
-            print(f"No matching arc for symbol '{symbol}' in state {current_state}")
-            print(f"Current state: {current_state}")
-            print(f"Input string: {' '.join(input_str)}")
-            print(f"Output string so far: {''.join(output_str)}")
-            return None
+        # Tkinter window for FST construction
+        self.window = Tk()
+        self.window.title("Chinglish FST Construction")
         
-        # If there are multiple possible arcs, choose the one with the longest input string
-        chosen_arc = max(possible_arcs, key=lambda arc: len(self._in_string[arc]))
-
-        # Update the current state and output string
-        current_state = self._dst[chosen_arc]
-        output_str.extend(self._out_string[chosen_arc])
+        self.canvas = Canvas(self.window, width=800, height=400)
+        self.canvas.pack()
         
-        # After processing the entire input, update the current state
-        self.initial_state = current_state
+        self.graph = nx.DiGraph()
 
-        return ''.join(output_str)
-    
-# Define the states and transitions
-f = ChinglishFST('chinglish_transliteration')
-state_labels = {}
+    def add_syllables(self, syllables, translation):
+        self.mapping[len(syllables.split())][syllables] = translation
 
-# Function to add state and return the label
-def add_state(label):
-    state_labels[label] = True
-    f.add_state(label)
-    return label
+    def get_syllables(self, syllables):
+        return self.mapping[len(syllables.split())][syllables]
 
-# Added arcs | Mapping of Pinyin to English Loan Word
-f.add_arc(add_state('1'), add_state('2'), ('beng', 'dai'), ('band', 'age'))
-f.add_arc(add_state('3'), add_state('4'), ('amo', 'niya'), ('ammo', 'nia'))
-f.add_arc(add_state('5'), add_state('6'), ('asi', 'pi', 'lin'), ('as', 'pi', 'rin'))
-f.add_arc(add_state('7'), add_state('8'), ('shi', 'duo', 'pi', 'li'), ('straw', 'ber', 'ry'))
-f.add_arc(add_state('9'), add_state('10'), ('bei', 'guo'), ('ba', 'gel'))
-f.add_arc(add_state('11'), add_state('12'), ('sang', 'na'), ('hea', 'lth'))
-f.add_arc(add_state('13'), add_state('14'), ('banz', 'huo', 'qin'), ('ban', 'jo'))
-f.add_arc(add_state('15'), add_state('16'), ('ma', 'ke', 'bei'), ('mu', 'g'))
-f.add_arc(add_state('17'), add_state('18'), ('ba', 'lei'), ('bal', 'let'))
-f.add_arc(add_state('19'), add_state('20'), ('mai', 'ke', 'feng'), ('mi', 'cro', 'phone'))
-f.add_arc(add_state('21'), add_state('22'), ('bu', 'lu', 'si'), ('b', 'lu', 'es'))
-f.add_arc(add_state('23'), add_state('24'), ('ma', 'sha', 'ji'), ('mas', 'sage'))
-f.add_arc(add_state('25'), add_state('26'), ('ba', 'shi'), ('b', 'us'))
-f.add_arc(add_state('27'), add_state('28'), ('ning', 'meng'), ('le', 'mon'))
-f.add_arc(add_state('29'), add_state('30'), ('ka', 'fei', 'yin'), ('caf', 'fei', 'ne'))
-f.add_arc(add_state('31'), add_state('32'), ('jia', 'ke'), ('jac', 'ket'))
-f.add_arc(add_state('33'), add_state('34'), ('ka', 'lu', 'li'), ('ca', 'lo', 'rie'))
-f.add_arc(add_state('35'), add_state('36'), ('su', 'ke', 'da'), ('scoo', 'ter'))
-f.add_arc(add_state('37'), add_state('38'), ('ka', 'tong'), ('car', 'toon'))
-f.add_arc(add_state('39'), add_state('40'), ('xiang', 'bo'), ('sham', 'poo'))
-f.add_arc(add_state('41'), add_state('42'), ('zhi', 'shi'), ('che', 'ese'))
-f.add_arc(add_state('43'), add_state('44'), ('shi', 'duo', 'pi', 'li'), ('straw', 'ber', 'ry'))
-f.add_arc(add_state('45'), add_state('46'), ('qiao', 'ke', 'li'), ('cho', 'co', 'late'))
-f.add_arc(add_state('47'), add_state('48'), ('ji', 'ta'), ('gui', 'tar'))
-f.add_arc(add_state('49'), add_state('50'), ('ka', 'fei'), ('cof', 'fee'))
-f.add_arc(add_state('51'), add_state('52'), ('ha', 'ni'), ('ho', 'ney'))
-f.add_arc(add_state('53'), add_state('54'), ('qu', 'qi'), ('coo', 'kie'))
-f.add_arc(add_state('55'), add_state('56'), ('lei', 'she'), ('la', 'ser'))
-f.add_arc(add_state('57'), add_state('58'), ('sha', 'fa'), ('so', 'fa'))
-f.add_arc(add_state('59'), add_state('60'), ('ni', 'long'), ('ny', 'lon'))
-f.add_arc(add_state('61'), add_state('62'), ('ga', 'li'), ('cur', 'ry'))
-f.add_arc(add_state('63'), add_state('64'), ('di', 'shi'), ('ta', 'xi'))
-f.add_arc(add_state('65'), add_state('66'), ('wei', 'ta', 'ming'), ('vi', 'ta', 'min'))
-f.add_arc(add_state('67'), add_state('68'), ('yu', 'jia'), ('yo', 'ga'))
+    def _extract_syllables(self, text):
+        if len(text.split()) == 1:
+            return text.strip()
 
-# Set the initial state and final state
-f.initial_state = '1'
-f.set_final('68')
+        for i in range(4, 0, -1):
+            for j in range(len(text.split()) - 1):
+                span = ' '.join(text.split()[j:j + i])
+                if span in self.mapping[i] and text.index(span) == 0:
+                    return span
 
-# Tkinter window for FST construction
-window = Tk()
-window.title("FST Construction")
+    def get_chains(self, text):
+        chains = []
 
-# Text widget to display FST information
-fst_info_text = Text(window, height=80, width=90)
-fst_info_text.pack()
+        while text:
+            chain = self._extract_syllables(text)
 
-# Display the FST information in the Tkinter window
-fst_info_text.insert(END, f.__str__())
+            if chain:
+                text = text.replace(chain, '', 1).strip()
+                chains.append(chain)
 
-# Draw the FST using networkx and matplotlib
-G = nx.DiGraph()
+        return chains
 
-for state in f.states():
-    for arc_label in f._outgoing[state]:
-        source = state
-        target = f._dst[arc_label]
-        input_str = f._in_string[arc_label]
-        output_str = f._out_string[arc_label]
-        G.add_edge(source, target, label=f"{input_str} / {output_str}")
-    
-pos = nx.spring_layout(G)
-nx.draw(G, pos, with_labels=True, font_weight='bold', node_color='lightblue', node_size=1500, font_size=8, arrowsize=20)
-edge_labels = nx.get_edge_attributes(G, 'label')
-nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    def translate_chains(self, chains):
+        new = []
 
-# Save the graph to a file
-graph_file_path = "fst_graph.png"
-plt.savefig(graph_file_path)
-plt.show()
+        for chain in chains:
+            new.append(self.get_syllables(chain))
 
-# Display the saved image using PIL and IPython
-img = Image.open(graph_file_path)
-display(IPImage(graph_file_path))
+        return ' '.join(new)
 
-# Run the Tkinter main loop
-window.mainloop()
+    def translate(self, text):
+        chains = self.get_chains(text)
+        result = self.translate_chains(chains)
 
-# Tests FST with given inputs and save mappings in the .dat file
-test_inputs = ["ga li", "ka lu li", "wei ta ming", "ka fei", "lei she", "beng dai", "ha ni", "amo niya"]
+        # Write to output file
+        self.output_file.write(f"{text} --> {result}\n")
 
-output_file_path = "Chinglish-trans.dat"
+        # Update Tkinter FST construction
+        self._update_fst_construction(text, result)
 
-# Opens file in write mode
-with open(output_file_path, 'w') as output_file:
-    # Iterate through test inputs
-    for input_str in test_inputs:
-        # Uses the recognize function to get the output for the entire input
-        output = f.recognize(input_str)
+        return result
 
-        # Writes the entire input and its English output to the .dat file
-        output_file.write(f"{input_str} --> {output}\n")
+    def _update_fst_construction(self, input_text, output_text):
+        self.graph.add_node(input_text)
+        self.graph.add_node(output_text)
+        self.graph.add_edge(input_text, output_text)
 
-        # Displays the test input and its recognition result in the nltk window
-        result = output if output else "None"
-        print(f"Test Input: {input_str} \t {result}")
+        pos = nx.spring_layout(self.graph)
+        
+        labels = {node: node for node in self.graph.nodes()}
+        
+        nx.draw_networkx_nodes(self.graph, pos, node_size=700, node_color='skyblue')
+        nx.draw_networkx_edges(self.graph, pos, width=1.0, alpha=0.5, edge_color='gray')
+        nx.draw_networkx_labels(self.graph, pos, labels, font_size=10)
+
+        img = ImageTk.PhotoImage(Image.open("fst_graph.png"))
+        self.canvas.create_image(20, 20, anchor=NW, image=img)
+
+    def close_output_file(self):
+        self.output_file.close()
+
+# Instance of the translator
+translator = ChinglishFST()
+
+# Added syllables and translations
+translator.add_syllables('ga', 'cur')
+translator.add_syllables('li', 'ry')
+translator.add_syllables('ka', 'ca')
+translator.add_syllables('lu', 'lo')
+translator.add_syllables('lu li', 'lo rie')
+translator.add_syllables('wei ta ming', 'vi ta min') 
+translator.add_syllables('ka fei', 'cof fee')
+translator.add_syllables('beng dai', 'band age')
+translator.add_syllables('a mo ni ya', 'am mo ni a')
+translator.add_syllables('a si pi lin', 'a s pi rin')
+translator.add_syllables('bei guo', 'ba gel') 
+translator.add_syllables('ban zhuo qin', 'b an jo') 
+translator.add_syllables('ba lei', 'bal let')
+translator.add_syllables('bu lu si', 'b lu es') 
+translator.add_syllables('ba shi', 'b us') 
+translator.add_syllables('ka fei yin', 'caf fei ne')
+translator.add_syllables('ka tong', 'car toon') 
+translator.add_syllables('zhi shi', 'che ese') 
+translator.add_syllables('qiao ke li', 'cho co late') 
+translator.add_syllables('qu qi', 'coo kie') 
+translator.add_syllables('sha fa', 'so fa') 
+translator.add_syllables('tu si', 'toa st') 
+translator.add_syllables('de lu feng', 'te le phone') 
+translator.add_syllables('shi duo pi li', 'st raw ber ry')
+translator.add_syllables('sang na', 'heal th') 
+translator.add_syllables('ma ke bei', 'm u g') 
+translator.add_syllables('mai ke feng', 'mi cro phone') 
+translator.add_syllables('ma sha ji', 'mas sa ge')
+translator.add_syllables('ning meng', 'le mon') 
+translator.add_syllables('jia ke', 'jac ket') 
+translator.add_syllables('su ke da', 'sc oo ter') 
+translator.add_syllables('xiang bo', 'sham poo') 
+translator.add_syllables('ji ta', 'gui tar') 
+translator.add_syllables('ha ni', 'ho ney') 
+translator.add_syllables('lei she', 'la ser') 
+translator.add_syllables('ni long', 'ny lon') 
+translator.add_syllables('di shi', 'ta xi') 
+translator.add_syllables('yu jia', 'yo ga') 
+
+# Test Inputs (Figure 1)
+print(translator.translate("ga"))          # cur
+print(translator.translate("li"))          # ry
+print(translator.translate("ka lu li"))    # ca lo rie
+print(translator.translate("wei ta ming")) # vi ta min
+print(translator.translate("ka fei"))      # cof fee 
+print(translator.translate("lei she"))     # la ser
+
+# Test Inputs (Rest of all mappings)
+print(translator.translate("beng dai"))    # band age
+print(translator.translate("a mo ni ya"))  # am mo ni a
+print(translator.translate("a si pi lin")) # a s pi rin
+print(translator.translate("bei guo"))     # ba gel 
+print(translator.translate("ban zhuo qin")) # b an jo
+print(translator.translate("ba lei"))      # bal let
+print(translator.translate("bu lu si"))    # b lu es
+print(translator.translate("ba shi"))      # b us
+print(translator.translate("ka fei yin"))  # caf fei ne
+print(translator.translate("ka tong"))     # car toon
+print(translator.translate("zhi shi"))     # che ese
+print(translator.translate("qiao ke li"))  # cho co late
+print(translator.translate("qu qi"))       # coo kie
+print(translator.translate("sha fa"))      # so fa
+print(translator.translate("tu si"))       # toa st
+print(translator.translate("de lu feng"))  # te le phone
+print(translator.translate("shi duo pi li"))# st raw ber ry
+print(translator.translate("sang na"))      # heal th
+print(translator.translate("ma ke bei"))    # m u g
+print(translator.translate("mai ke feng"))  # mi cro phone
+print(translator.translate("ma sha ji"))   # mas sa ge
+print(translator.translate("ning meng"))   # le mon
+print(translator.translate("jia ke"))      # jac ket
+print(translator.translate("su ke da"))    # sc oo ter
+print(translator.translate("xiang bo"))    # sham poo
+print(translator.translate("ji ta"))       # gui tar
+print(translator.translate("ha ni"))       # ho ney
+print(translator.translate("ni long"))     # ny lon
+print(translator.translate("di shi"))      # ta xi
+print(translator.translate("yu jia"))      # yo ga
+
+# Close output file
+translator.close_output_file()
+
+# Tkinter mainloop
+translator.window.mainloop()
