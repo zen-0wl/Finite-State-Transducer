@@ -4,7 +4,7 @@ Based on table below ↓
 
 ![image](https://github.com/zen-0wl/Finite-State-Transducer-/assets/65055268/52060b81-a34a-46e9-8988-722b2fa5dfc9)
 
-- a modified python FST program (based on the given file recognize-sol2.py) for the ChineseEnglish transliterations
+- a modified python FST program (based on the given file recognize-sol.py) for the ChineseEnglish transliterations
 - an output file that prints the mappings of the transliterations as shown in Figure 1
 ![image](https://github.com/zen-0wl/Finite-State-Transducer-/assets/65055268/22390620-4801-4d14-87d7-68f4ba07cd76)
 
