@@ -8,7 +8,7 @@ class myFST(FST):
         # insert your codes here
         #self.inp = iput.split()
         #self.outp = oput.split()
-        self.inp = list(iput)
+        self.inp = list(iput) # takes the list and changes into characters 
         self.outp = list(oput)
         #f.transduce("abc")        
         
